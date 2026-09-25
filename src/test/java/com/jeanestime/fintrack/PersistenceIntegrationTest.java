@@ -1,5 +1,6 @@
 package com.jeanestime.fintrack;
 
+import java.util.UUID;
 import com.jeanestime.fintrack.entity.Account;
 import com.jeanestime.fintrack.entity.AccountType;
 import com.jeanestime.fintrack.entity.FinancialTransaction;
@@ -32,31 +33,34 @@ class PersistenceIntegrationTest {
     @Autowired
     private FinancialTransactionRepository transactionRepository;
 
-    @Test
-    void shouldPersistUserAccountAndTransaction() {
+   @Test
+        void shouldPersistUserAccountAndTransaction() {
 
-        User user = new User(
-                "Jean Woodly Estime",
-                "jean.fintrack@example.com"
-        );
+                String testEmail =
+            "persistence-test-" + UUID.randomUUID() + "@example.com";
 
-        User savedUser = userRepository.save(user);
+                User user = new User(
+            "Integration Test User",
+            testEmail
+                );
 
-        assertNotNull(savedUser.getId());
+                User savedUser = userRepository.save(user);
 
-        Account account = new Account(
-                savedUser,
-                "Main Account",
-                AccountType.CHECKING,
-                new BigDecimal("1500.00")
-        );
+                assertNotNull(savedUser.getId());
 
-        Account savedAccount = accountRepository.save(account);
+                Account account = new Account(
+                        savedUser,
+                        "Main Account",
+                        AccountType.CHECKING,
+                        new BigDecimal("1500.00")
+                );
 
-        assertNotNull(savedAccount.getId());
-        assertEquals(savedUser.getId(), savedAccount.getUser().getId());
+         Account savedAccount = accountRepository.save(account);
 
-        FinancialTransaction transaction =
+                assertNotNull(savedAccount.getId());
+                assertEquals(savedUser.getId(), savedAccount.getUser().getId());
+
+                FinancialTransaction transaction =
                 new FinancialTransaction(
                         savedAccount,
                         TransactionType.EXPENSE,
@@ -65,37 +69,37 @@ class PersistenceIntegrationTest {
                         OffsetDateTime.now()
                 );
 
-        FinancialTransaction savedTransaction =
-                transactionRepository.save(transaction);
+                FinancialTransaction savedTransaction =
+                 transactionRepository.save(transaction);
 
-        assertNotNull(savedTransaction.getId());
-        assertEquals(
-                new BigDecimal("89.90"),
-                savedTransaction.getAmount()
-        );
+                assertNotNull(savedTransaction.getId());
+                assertEquals(
+                        new BigDecimal("89.90"),
+                        savedTransaction.getAmount()
+                );
 
-        assertTrue(
+                assertTrue(
                 userRepository.findByEmail(
-                        "jean.fintrack@example.com"
+                        testEmail
                 ).isPresent()
-        );
+                );
 
-        assertEquals(
-                1,
-                accountRepository
+                assertEquals(
+                        1,
+                 accountRepository
                         .findAllByUser_IdOrderByCreatedAtAsc(
                                 savedUser.getId()
                         )
                         .size()
-        );
+                 );
 
-        assertEquals(
-                1,
-                transactionRepository
+                assertEquals(
+                        1,
+                        transactionRepository
                         .findAllByAccount_IdOrderByOccurredAtDesc(
                                 savedAccount.getId()
                         )
                         .size()
-        );
-    }
+                );
+        }
 }
