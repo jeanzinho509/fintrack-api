@@ -3,6 +3,7 @@ package com.jeanestime.fintrack.controller;
 import com.jeanestime.fintrack.dto.account.AccountResponse;
 import com.jeanestime.fintrack.dto.account.CreateAccountRequest;
 import com.jeanestime.fintrack.service.AccountService;
+import com.jeanestime.fintrack.dto.account.AccountBalanceResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,4 +55,13 @@ public class AccountController {
                 accountService.findByUserId(userId)
         );
     }
+
+     @GetMapping("/{id}/balance")
+        public ResponseEntity<AccountBalanceResponse> getBalance(
+                @PathVariable Long id
+        ) {
+        return ResponseEntity.ok(
+                accountService.getBalance(id)
+        );
+     }
 }

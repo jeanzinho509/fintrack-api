@@ -1,15 +1,19 @@
 package com.jeanestime.fintrack.service;
 
+import com.jeanestime.fintrack.dto.account.AccountBalanceResponse;
 import com.jeanestime.fintrack.dto.account.AccountResponse;
 import com.jeanestime.fintrack.dto.account.CreateAccountRequest;
 import com.jeanestime.fintrack.entity.Account;
+import com.jeanestime.fintrack.entity.TransactionType;
 import com.jeanestime.fintrack.entity.User;
 import com.jeanestime.fintrack.exception.ResourceNotFoundException;
 import com.jeanestime.fintrack.repository.AccountRepository;
+import com.jeanestime.fintrack.repository.FinancialTransactionRepository;
 import com.jeanestime.fintrack.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -17,13 +21,16 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final FinancialTransactionRepository transactionRepository;
 
     public AccountService(
             AccountRepository accountRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            FinancialTransactionRepository transactionRepository
     ) {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -75,6 +82,42 @@ public class AccountService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AccountBalanceResponse getBalance(Long accountId) {
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Account not found with id: " + accountId
+                        )
+                );
+
+        BigDecimal totalIncome =
+                transactionRepository.sumAmountByAccountIdAndType(
+                        accountId,
+                        TransactionType.INCOME
+                );
+
+        BigDecimal totalExpense =
+                transactionRepository.sumAmountByAccountIdAndType(
+                        accountId,
+                        TransactionType.EXPENSE
+                );
+
+        BigDecimal currentBalance =
+                account.getInitialBalance()
+                        .add(totalIncome)
+                        .subtract(totalExpense);
+
+        return new AccountBalanceResponse(
+                account.getId(),
+                account.getInitialBalance(),
+                totalIncome,
+                totalExpense,
+                currentBalance
+        );
     }
 
     private AccountResponse toResponse(Account account) {
